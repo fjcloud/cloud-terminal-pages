@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; frame-src https://*.opentlc.com https://*.demo.redhat.com https://fjcloud.github.io; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Cloud Terminal</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header>
+    <a class="brand" href="./">Cloud Terminal</a>
+    <p id="status" role="status" aria-live="polite">Your workshop, ready in the browser.</p>
+    <div id="session-actions" hidden>
+      <button id="copy-link" type="button">Copy workshop link</button>
+      <button id="change" type="button">Change environment</button>
+    </div>
+  </header>
+
+  <main id="setup">
+    <section class="card" aria-labelledby="setup-title">
+      <p class="eyebrow">RED HAT CLOUD SSAs</p>
+      <h1 id="setup-title">Start your workshop</h1>
+      <p>Use the Showroom URL from your assigned Red Hat Demo Platform environment. Your cluster and terminal are already prepared.</p>
+      <form id="start-form">
+        <label for="workshop">Workshop</label>
+        <select id="workshop" name="workshop" required>
+          <option value="rosa-ai-app-platform">AWS · AI developer platform on ROSA</option>
+          <option value="aro-ai-app-platform">Azure · AI developer platform on ARO</option>
+        </select>
+        <label for="showroom">Your Showroom URL</label>
+        <input id="showroom" name="showroom" type="url" required autocomplete="off" spellcheck="false" placeholder="https://bastion.…opentlc.com/showroom/" aria-describedby="showroom-help error">
+        <p id="showroom-help" class="hint">Find it in your RHDP environment details. An existing WeTTY URL also works.</p>
+        <p id="error" role="alert" hidden></p>
+        <button type="submit" class="primary">Open workshop</button>
+      </form>
+      <p class="footnote">Sign in through <a href="https://demo.redhat.com" target="_blank" rel="noopener noreferrer">Red Hat Demo Platform</a> if your environment requires it. Use the environment assigned to you.</p>
+    </section>
+  </main>
+
+  <main id="workspace" hidden>
+    <nav id="mobile-tabs" aria-label="Workshop panels">
+      <button type="button" id="guide-tab" aria-pressed="true" aria-controls="guide-panel">Guide</button>
+      <button type="button" id="terminal-tab" aria-pressed="false" aria-controls="terminal-panel">Terminal</button>
+    </nav>
+    <div id="panels" class="panels">
+      <section id="guide-panel" class="panel" aria-label="Workshop guide">
+        <div class="panel-header"><h2>Guide</h2><a id="guide-link" target="_blank" rel="noopener noreferrer">Open in new tab ↗</a></div>
+        <iframe id="guide" title="Workshop guide" referrerpolicy="no-referrer" allow="clipboard-write" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"></iframe>
+      </section>
+      <div id="splitter" role="separator" aria-label="Resize guide and terminal" aria-orientation="vertical" aria-valuemin="25" aria-valuemax="75" aria-valuenow="45" tabindex="0"></div>
+      <section id="terminal-panel" class="panel" aria-label="Workshop terminal">
+        <div class="panel-header"><h2>Terminal</h2><a id="terminal-link" target="_blank" rel="noopener noreferrer">Open in new tab ↗</a></div>
+        <iframe id="terminal" title="Workshop terminal" referrerpolicy="no-referrer" allow="clipboard-read; clipboard-write; fullscreen" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"></iframe>
+        <p class="terminal-help">If the terminal stays blank or requests a login, open it in a new tab and use the access details supplied by your facilitator.</p>
+      </section>
+    </div>
+  </main>
+  <noscript><p>Enable JavaScript to open the guide and terminal together.</p></noscript>
+</body>
+</html>
