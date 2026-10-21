@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; frame-src https://*.opentlc.com https://*.demo.redhat.com https://fjcloud.github.io; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://cloud-terminal-catalog.fj-9d1.workers.dev; frame-src https://*.opentlc.com https://*.demo.redhat.com https://fjcloud.github.io; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Cloud Terminal</title>
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="app.js"></script>
@@ -23,18 +23,22 @@
     <section class="card" aria-labelledby="setup-title">
       <p class="eyebrow">RED HAT CLOUD SSAs</p>
       <h1 id="setup-title">Start your workshop</h1>
-      <p>Use the Showroom URL from your assigned Red Hat Demo Platform environment. Your cluster and terminal are already prepared.</p>
+      <p>Use the workshop ID, email, and password supplied by your facilitator. We’ll retrieve your assigned environment and open its terminal.</p>
       <form id="start-form">
         <label for="workshop">Workshop</label>
         <select id="workshop" name="workshop" required>
           <option value="rosa-ai-app-platform">AWS · AI developer platform on ROSA</option>
           <option value="aro-ai-app-platform">Azure · AI developer platform on ARO</option>
         </select>
-        <label for="showroom">Your Showroom URL</label>
-        <input id="showroom" name="showroom" type="url" required autocomplete="off" spellcheck="false" placeholder="https://bastion.…opentlc.com/showroom/" aria-describedby="showroom-help error">
-        <p id="showroom-help" class="hint">Find it in your RHDP environment details. An existing WeTTY URL also works.</p>
+        <label for="workshop-id">Workshop ID</label>
+        <input id="workshop-id" name="workshop-id" required maxlength="300" autocomplete="off" spellcheck="false" placeholder="ws49sk or the catalog workshop URL" aria-describedby="error">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required maxlength="254" autocomplete="username" spellcheck="false" placeholder="The email assigned to your workshop">
+        <label for="password">Workshop password</label>
+        <input id="password" name="password" type="password" required maxlength="128" autocomplete="current-password" aria-describedby="signin-help error">
+        <p id="signin-help" class="hint">Your details are used only to retrieve your assigned environment. They are never included in shared links.</p>
         <p id="error" role="alert" hidden></p>
-        <button type="submit" class="primary">Open workshop</button>
+        <button id="start" type="submit" class="primary">Open workshop</button>
       </form>
       <p class="footnote">Sign in through <a href="https://demo.redhat.com" target="_blank" rel="noopener noreferrer">Red Hat Demo Platform</a> if your environment requires it. Use the environment assigned to you.</p>
     </section>

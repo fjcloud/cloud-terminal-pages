@@ -1,3 +1,6 @@
+import { workshopID, environmentURL, showroomURL, validateCredentials, catalogError, readJSON } from './catalog.mjs';
+
+const catalogAPI = 'https://cloud-terminal-catalog.fj-9d1.workers.dev/api/workshop/';
 const workshops = {
   'rosa-ai-app-platform': { title: 'AI developer platform on ROSA', cloud: 'AWS' },
   'aro-ai-app-platform': { title: 'AI developer platform on ARO', cloud: 'Azure' },
@@ -6,24 +9,9 @@ const workshops = {
 const $ = (id) => document.getElementById(id);
 let active = null;
 
-function environmentURL(raw) {
-  let url;
-  try { url = new URL(raw.trim()); } catch { throw new Error('Enter the HTTPS Showroom URL from your RHDP environment details.'); }
-  const trusted = ['opentlc.com', 'demo.redhat.com'].some(domain => url.hostname.endsWith(`.${domain}`));
-  if (url.protocol !== 'https:' || !trusted || url.username || url.password || (url.port && url.port !== '443')) {
-    throw new Error('Use an HTTPS RHDP URL on opentlc.com or demo.redhat.com, without credentials or a custom port.');
-  }
-  if (url.search || url.hash) throw new Error('Use the Showroom URL without query parameters or a fragment.');
-  if (!/^\/(?:showroom(?:\/.*)?|wetty\/?)?$/.test(url.pathname)) {
-    throw new Error('Use the Showroom or WeTTY URL from your RHDP environment details.');
-  }
-  return new URL('/showroom/', url.origin).href;
-}
-
 function showError(message) {
   $('error').textContent = message;
   $('error').hidden = !message;
-  $('showroom').setAttribute('aria-invalid', message ? 'true' : 'false');
 }
 
 function shareURL() {
@@ -33,12 +21,12 @@ function shareURL() {
   return url;
 }
 
-function openWorkshop(workshop, raw) {
+function openWorkshop(workshop, raw, id) {
   if (!Object.hasOwn(workshops, workshop)) throw new Error('Choose one of the listed workshops.');
   const showroom = environmentURL(raw);
   const guide = `https://fjcloud.github.io/${workshop}/modules/100-setup/lab_1_access_${workshop.startsWith('rosa') ? 'rosa' : 'aro'}.html`;
   const terminal = new URL('/wetty/', showroom).href;
-  active = { workshop, showroom };
+  active = { workshop, id };
   $('guide').src = guide;
   $('terminal').src = terminal;
   $('guide-link').href = guide;
@@ -54,10 +42,48 @@ function openWorkshop(workshop, raw) {
   $('guide-link').focus();
 }
 
-$('start-form').addEventListener('submit', event => {
+$('start-form').addEventListener('submit', async event => {
   event.preventDefault();
-  try { openWorkshop($('workshop').value, $('showroom').value); }
-  catch (error) { showError(error.message); $('showroom').focus(); }
+  const workshop = $('workshop').value;
+  const email = $('email').value.trim();
+  const accessPassword = $('password').value;
+  const controller = new AbortController();
+  let timer;
+  try {
+    const id = workshopID($('workshop-id').value);
+    validateCredentials(email, accessPassword);
+    if (!Object.hasOwn(workshops, workshop)) throw new Error('Choose one of the listed workshops.');
+    showError('');
+    for (const field of $('start-form').elements) field.disabled = true;
+    $('password').value = '';
+    $('start').textContent = 'Finding your environment…';
+    $('status').textContent = 'Retrieving your assigned workshop environment…';
+    timer = setTimeout(() => controller.abort(), 20000);
+    let response;
+    try {
+      response = await fetch(catalogAPI + encodeURIComponent(id), {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, accessPassword }),
+        credentials: 'omit', cache: 'no-store', redirect: 'error', signal: controller.signal,
+      });
+    } catch {
+      throw new Error(controller.signal.aborted ? 'The workshop catalog took too long to respond. Try again.' : 'The workshop catalog could not be reached. Try again or contact your facilitator.');
+    }
+    if (!response.ok) throw new Error(catalogError(response.status));
+    let payload;
+    try { payload = await readJSON(response); }
+    catch (error) { throw new Error(controller.signal.aborted ? 'The workshop catalog took too long to respond. Try again.' : error.message); }
+    const assigned = showroomURL(payload);
+    openWorkshop(workshop, assigned, id);
+  } catch (error) {
+    showError(error.message);
+    $('status').textContent = 'The workshop could not be opened.';
+  } finally {
+    clearTimeout(timer);
+    $('password').value = '';
+    for (const field of $('start-form').elements) field.disabled = false;
+    $('start').textContent = 'Open workshop';
+  }
 });
 
 $('change').addEventListener('click', () => {
@@ -70,14 +96,15 @@ $('change').addEventListener('click', () => {
   document.title = 'Cloud Terminal';
   active = null;
   history.replaceState(null, '', location.pathname);
-  $('showroom').focus();
+  $('password').value = '';
+  $('password').focus();
 });
 
 $('copy-link').addEventListener('click', async () => {
   if (!active) return;
   try {
     await navigator.clipboard.writeText(shareURL().href);
-    $('status').textContent = 'Workshop link copied. Share it only with people assigned to this environment.';
+    $('status').textContent = 'Workshop link copied. Each participant signs in with their own assigned email and the workshop password.';
     $('copy-link').textContent = 'Link copied';
     setTimeout(() => { $('copy-link').textContent = 'Copy workshop link'; }, 2500);
   } catch {
@@ -120,10 +147,17 @@ for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
 }
 
 const initial = new URLSearchParams(location.hash.slice(1));
-if (initial.has('showroom') || initial.has('workshop')) {
-  $('showroom').value = initial.get('showroom') || '';
+if (initial.has('id') || initial.has('workshop')) {
   const workshop = initial.get('workshop') || $('workshop').value;
   if (Object.hasOwn(workshops, workshop)) $('workshop').value = workshop;
-  try { openWorkshop(workshop, $('showroom').value); }
+  try {
+    if (!Object.hasOwn(workshops, workshop)) throw new Error('Choose one of the listed workshops.');
+    if (initial.has('id')) $('workshop-id').value = workshopID(initial.get('id'));
+  }
   catch (error) { showError(error.message); }
 }
+// Keep only the workshop and ID in incoming links, never credentials or a seat URL.
+const clean = new URL(location.href);
+clean.search = '';
+clean.hash = new URLSearchParams({ workshop: $('workshop').value, ...($('workshop-id').value ? { id: $('workshop-id').value } : {}) }).toString();
+history.replaceState(null, '', clean);
