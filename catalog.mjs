@@ -14,7 +14,7 @@ export function workshopID(raw) {
 export function environmentURL(raw) {
   let url;
   try { url = new URL(String(raw).trim()); } catch { throw new Error('The assigned environment did not include a valid Showroom URL.'); }
-  const trusted = ['opentlc.com', 'demo.redhat.com'].some(domain => url.hostname.endsWith(`.${domain}`));
+  const trusted = ['opentlc.com', 'demo.redhat.com', 'azure.redhatworkshops.io'].some(domain => url.hostname.endsWith(`.${domain}`));
   if (url.protocol !== 'https:' || !trusted || url.username || url.password || (url.port && url.port !== '443') || url.search || url.hash || !/^\/(?:showroom(?:\/.*)?|wetty\/?)?$/.test(url.pathname)) {
     throw new Error('The assigned Showroom URL is not a supported RHDP browser terminal. Ask your facilitator to check the environment.');
   }
