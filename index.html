@@ -20,13 +20,23 @@
   </header>
 
   <main id="setup">
+    <section id="facilitator" class="card" aria-labelledby="facilitator-title" hidden>
+      <p class="eyebrow">FACILITATORS · RED HAT CLOUD SSAs</p>
+      <h2 id="facilitator-title">Prepare a workshop</h2>
+      <ol>
+        <li>On <a href="https://demo.redhat.com" target="_blank" rel="noopener noreferrer">Red Hat Demo Platform</a>, order a ROSA or ARO environment with a ready cluster, bastion, and WeTTY browser terminal.</li>
+        <li>Assign participants their environments using the usual RHDP workflow.</li>
+        <li>Share the <a href="?workshop=aro-ai-app-platform">ARO participant link</a> or <a href="?workshop=rosa-ai-app-platform">ROSA participant link</a>, plus the workshop ID, assigned email, password, and environment access details. Participants do not need to order a demo.</li>
+      </ol>
+    </section>
     <section class="card" aria-labelledby="setup-title">
-      <p class="eyebrow">RED HAT CLOUD SSAs</p>
+      <p class="eyebrow">WORKSHOP PARTICIPANTS</p>
       <h1 id="setup-title">Start your workshop</h1>
       <p>Use the workshop ID, email, and password supplied by your facilitator. We’ll retrieve your assigned environment and open its terminal.</p>
       <form id="start-form">
         <label for="workshop">Workshop</label>
         <select id="workshop" name="workshop" required>
+          <option value="" selected disabled>Choose a workshop</option>
           <option value="rosa-ai-app-platform">AWS · AI developer platform on ROSA</option>
           <option value="aro-ai-app-platform">Azure · AI developer platform on ARO</option>
         </select>
@@ -40,7 +50,7 @@
         <p id="error" role="alert" hidden></p>
         <button id="start" type="submit" class="primary">Open workshop</button>
       </form>
-      <p class="footnote">Sign in through <a href="https://demo.redhat.com" target="_blank" rel="noopener noreferrer">Red Hat Demo Platform</a> if your environment requires it. Use the environment assigned to you.</p>
+      <p class="footnote">Need access details? Contact your facilitator.</p>
     </section>
   </main>
 

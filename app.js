@@ -8,6 +8,7 @@ const workshops = {
 
 const $ = (id) => document.getElementById(id);
 let active = null;
+let linkedWorkshop = null;
 
 function showError(message) {
   $('error').textContent = message;
@@ -21,11 +22,18 @@ function shareURL() {
   return url;
 }
 
+function selectLinkedWorkshop(workshop) {
+  linkedWorkshop = workshop;
+  const label = `${workshops[workshop].cloud} · ${workshops[workshop].title}`;
+  $('workshop').replaceChildren(new Option(label, workshop, true, true));
+}
+
 function openWorkshop(workshop, raw, id) {
   if (!Object.hasOwn(workshops, workshop)) throw new Error('Choose one of the listed workshops.');
   const showroom = environmentURL(raw);
   const guide = `https://fjcloud.github.io/${workshop}/modules/100-setup/lab_1_access_${workshop.startsWith('rosa') ? 'rosa' : 'aro'}.html`;
   const terminal = new URL('/wetty/', showroom).href;
+  selectLinkedWorkshop(workshop);
   active = { workshop, id };
   $('guide').src = guide;
   $('terminal').src = terminal;
@@ -95,9 +103,14 @@ $('change').addEventListener('click', () => {
   $('status').textContent = 'Your workshop, ready in the browser.';
   document.title = 'Cloud Terminal';
   active = null;
-  history.replaceState(null, '', location.pathname);
+  const url = new URL(location.href);
+  url.search = '';
+  url.hash = linkedWorkshop ? new URLSearchParams({ workshop: linkedWorkshop }).toString() : '';
+  history.replaceState(null, '', url);
+  if (!linkedWorkshop) $('workshop').value = '';
+  $('facilitator').hidden = Boolean(linkedWorkshop);
   $('password').value = '';
-  $('password').focus();
+  $(linkedWorkshop ? 'password' : 'workshop').focus();
 });
 
 $('copy-link').addEventListener('click', async () => {
@@ -146,18 +159,26 @@ for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
   splitter.addEventListener(event, () => $('panels').classList.remove('resizing'));
 }
 
-const initial = new URLSearchParams(location.hash.slice(1));
-if (initial.has('id') || initial.has('workshop')) {
-  const workshop = initial.get('workshop') || $('workshop').value;
-  if (Object.hasOwn(workshops, workshop)) $('workshop').value = workshop;
+const incoming = new URL(location.href);
+const initial = new URLSearchParams(incoming.hash.slice(1));
+const requestedWorkshop = initial.get('workshop') ?? incoming.searchParams.get('workshop');
+const requestedID = initial.get('id') ?? incoming.searchParams.get('id');
+$('facilitator').hidden = requestedWorkshop !== null || requestedID !== null;
+if (requestedWorkshop !== null) {
   try {
-    if (!Object.hasOwn(workshops, workshop)) throw new Error('Choose one of the listed workshops.');
-    if (initial.has('id')) $('workshop-id').value = workshopID(initial.get('id'));
+    if (!Object.hasOwn(workshops, requestedWorkshop)) throw new Error('Choose one of the listed workshops.');
+    selectLinkedWorkshop(requestedWorkshop);
   }
+  catch (error) { showError(error.message); }
+}
+if (requestedID !== null) {
+  try { $('workshop-id').value = workshopID(requestedID); }
   catch (error) { showError(error.message); }
 }
 // Keep only the workshop and ID in incoming links, never credentials or a seat URL.
 const clean = new URL(location.href);
 clean.search = '';
-clean.hash = new URLSearchParams({ workshop: $('workshop').value, ...($('workshop-id').value ? { id: $('workshop-id').value } : {}) }).toString();
+clean.hash = new URLSearchParams({ ...(linkedWorkshop ? { workshop: linkedWorkshop } : {}), ...($('workshop-id').value ? { id: $('workshop-id').value } : {}) }).toString();
 history.replaceState(null, '', clean);
+// Follow fragment links and returning to the root with the same startup rules.
+window.addEventListener('hashchange', () => location.reload());
